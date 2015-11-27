@@ -1,0 +1,134 @@
+package rss;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class EditRssFeed {
+	private String rss_id;
+	private String rss_desc, rss_link, tag, tag_attr, attr_val, rss_source,rss_medium, rss_domain;
+	private String con_name;
+	
+	
+	public EditRssFeed( String rss_id, String rss_desc, String rss_link, String tag,
+			String tag_attr, String attr_val, String rss_source, String rss_medium, String con_name, String rss_domain) {
+		super();
+		this.rss_id = rss_id;
+		this.rss_desc = rss_desc;
+		this.rss_link = rss_link;
+		this.tag = tag;
+		this.tag_attr = tag_attr;
+		this.attr_val = attr_val;
+		this.rss_source = rss_source;
+		this.rss_medium = rss_medium;
+		this.con_name = con_name;
+		this.rss_domain = rss_domain;
+	}
+	
+	
+	public String Edit(){
+		Connection con_edit = null;
+		ResultSet rs, rs2;
+		PreparedStatement ps = null, ps8;
+		String output="";
+		String sql;
+		int num, con_id = 0, med_id=0;
+	 
+	    try {
+	    	con_edit = SqliteConnection.getConn();
+	    	
+	    	
+   	         ps8= con_edit.prepareStatement("SELECT id_region_country  FROM region_country WHERE region_country_name LIKE ?");
+   	         ps8.setString(1, con_name);
+			 rs2= ps8.executeQuery();
+			 if(rs2.next()){
+				 con_id = rs2.getInt(1);
+			     rs2.close();
+			 }
+			 ps8.close();
+			 
+			 ps8= con_edit.prepareStatement("SELECT id_rss_feed_medium  FROM rss_feed_medium WHERE rss_feed_medium_title LIKE ?");
+			 ps8.setString(1, rss_medium);
+			 rs= ps8.executeQuery();
+			 if(rs.next()){
+				 med_id = rs.getInt(1);
+			     rs.close();
+			 }
+			 ps8.close();
+			 
+			 if(con_id != 0 && med_id != 0){
+			sql = "update rss_feed_metadata set rss_feed_link='"+rss_link+"' ," +
+					" text_tag ='" +tag+"' ,"+
+	                   " tag_atrribute='" +tag_attr+"' ,"+
+	                   " attribute_value='"+attr_val+"' ,"+
+	                   " rss_description='"+rss_desc+"' ," +
+	                   " rss_source= '"+rss_source+"' ,"+
+	                   " rss_feed_medium_id_rss_feed_medium= '"+med_id+"' ,"+
+	                   " country_region_id_country_region= "+con_id+"' ,"+
+	                   " rss_domain= '"+rss_domain+
+					" where rss_description LIKE '"+rss_id+"'";
+			
+			  ps = con_edit.prepareStatement(sql);
+		      num = ps.executeUpdate();
+		      ps.close();
+		    
+			
+			 
+		    if(num == 1)
+		    	output = "تم التعديل بنجاح";
+		    else
+		    	output = "خطأ: لم يتم التعديل";
+			 
+			// ps8.close();
+			 ps.close();
+			 }
+	
+		} catch (Exception e) {
+			output = e.getMessage();
+		}
+		return output;
+		
+	}
+	
+	public String Delete() throws SQLException{
+		Connection con_del = null;
+		PreparedStatement ps=null, ps2= null, ps3 = null;
+		ResultSet rs= null;
+		String output="";
+		int num, id;
+	 
+	    try {
+	    	con_del = SqliteConnection.getConn();
+
+				 
+	    	ps = con_del.prepareStatement("SELECT id_rss_feed_metadata FROM rss_feed_metadata where rss_description LIKE '"+rss_id+"'");
+	    	rs= ps.executeQuery();
+	    	if(rs.next()){
+	    		id = rs.getInt(1);
+	    		ps2 = con_del.prepareStatement("DELETE FROM rss_feed_info WHERE rss_feed_metadata_id_rss_feed_metadata="+id);
+	    	    ps2.executeUpdate();
+	    		ps3 = con_del.prepareStatement("DELETE FROM rss_feed_metadata where id_rss_feed_metadata="+id);
+			    num = ps3.executeUpdate();
+			     if(num == 1)
+				    output = "تم الحذف بنجاح";
+				  else
+				    output = "خطأ: لم يتم الحذف";
+	    		
+	    	}else
+		    	output = "الخلاصة غير موجود";
+	       
+		} catch (Exception e) {
+			output = e.getMessage();
+		}finally{
+			rs.close();
+			ps.close();
+			ps2.close();
+			ps3.close();
+	      // con_del.close();
+		}
+		return output;
+		
+	}
+
+}
